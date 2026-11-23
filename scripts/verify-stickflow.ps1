@@ -35,3 +35,4 @@ if ($failed) {
     exit 1
 }
 Write-Host 'All StickFlow checks passed.' -ForegroundColor Green
+exit 0

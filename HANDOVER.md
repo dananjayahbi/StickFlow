@@ -22,6 +22,7 @@ No video-model account, API key or generation credits are needed for B.
 | Python runtime tests | all pass |
 | End-to-end B1 render | pass — 16.4 s, 1280×720, 30 fps, H.264 + AAC |
 | End-to-end B5 render | pass — 10 s, 1920×1080, 30 fps, silent stage demo |
+| New video from local TTS | pass — 6.2 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
 
 ## Quick start (B only)
 
@@ -38,7 +39,11 @@ node skills\stickflow\scripts\autopilot.mjs doctor
 powershell -ExecutionPolicy Bypass -File scripts\render-b1-demo.ps1
 ```
 
-Demo output: `output\StickFlow-B1-demo.mp4`
+Demo outputs:
+
+- `output\StickFlow-B1-demo.mp4` — bundled 16.4 s example
+- `output\StickFlow-B1-local-tts-demo.mp4` — new 6.2 s video made with the free
+  local Windows voice (see below)
 
 ## Create a new video with the agent
 
@@ -68,6 +73,25 @@ node skills\stickflow\scripts\autopilot.mjs render   <project-dir>
 `preview` is the normal approval gate. For a quick technical check without an
 approval record, run `preview` with the full duration; it produces the complete
 MP4 in `<project-dir>\output\preview.mp4`.
+
+## Free local narration (Windows)
+
+The PC has two installed SAPI voices: `Microsoft David Desktop` and
+`Microsoft Zira Desktop`. Generate narration and word timings with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File skills\stickflow\scripts\local-tts.ps1 `
+  -Text "Your approved narration here." `
+  -Output C:\work\my-video\narration.wav `
+  -WordsOut C:\work\my-video\words.json `
+  -Voice "Microsoft Zira Desktop"
+
+node skills\stickflow\scripts\autopilot.mjs captions `
+  C:\work\my-video\words.json C:\work\my-video\captions.json --lead 0.15
+```
+
+The voice is clearly synthetic, so listen to the encoded result before delivery.
+The full route is documented in `skills\stickflow\references\local-tts-windows.md`.
 
 ## B styles available
 

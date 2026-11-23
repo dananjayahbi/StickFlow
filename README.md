@@ -113,9 +113,10 @@ Script, voiceover, captions & sound · 15 battle-tested styles · For OpenCode, 
 
 > **This personal edition is configured for B · Code Engine.** Everything runs
 > locally with Node.js, FFmpeg and Python — no video-model API, account or
-> generation credits are required. A · Model Engine remains documented for
-> reference but is not configured here. See [HANDOVER.md](HANDOVER.md) for the
-> verified setup and B-only quick start.
+> generation credits are required. Narration can be produced for free with the
+> installed Windows voices via `skills/stickflow/scripts/local-tts.ps1`.
+> A · Model Engine remains documented for reference but is not configured here.
+> See [HANDOVER.md](HANDOVER.md) for the verified setup and B-only quick start.
 
 ## 🎬 Two video creation modes: Model Engine vs Code Engine
 
