@@ -22,7 +22,7 @@ No video-model account, API key or generation credits are needed for B.
 | Python runtime tests | all pass |
 | End-to-end B1 render | pass — 16.4 s, 1280×720, 30 fps, H.264 + AAC |
 | End-to-end B5 render | pass — 10 s, 1920×1080, 30 fps, silent stage demo |
-| New video from local TTS | pass — 6.2 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
+| New video from local TTS | pass — 6.45 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
 
 ## Quick start (B only)
 
@@ -42,7 +42,7 @@ powershell -ExecutionPolicy Bypass -File scripts\render-b1-demo.ps1
 Demo outputs:
 
 - `output\StickFlow-B1-demo.mp4` — bundled 16.4 s example
-- `output\StickFlow-B1-local-tts-demo.mp4` — new 6.2 s video made with the free
+- `output\StickFlow-B1-local-tts-demo.mp4` — new 6.45 s video made with the free
   local Windows voice (see below)
 
 ## Create a new video with the agent
@@ -134,3 +134,7 @@ python skills\stickflow\tests\b6_production_test.py
 - `output/` and `demo/` are local working folders.
 - The large `assets/`, `docs/` and `skills/` trees are intentionally listed in
   `.gitignore`, as requested, so Git tracks only the small root project files.
+  This means a fresh `git clone` will not contain the runnable Skill or media;
+  hand over this folder (or an archive of it), not the Git tree alone.
+- Local commits exist on `main`. The configured remote is your personal
+  `dananjayahbi/StickFlow` repository; nothing was pushed during this handover.

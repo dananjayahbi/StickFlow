@@ -386,7 +386,7 @@ Deep blue skies and seas, towering clouds, and sun-warmed stone walls set the sc
 
 ### A9: Coming soon…
 
-New Model Engine styles are in preparation. [Star the project](#road-to-10000-stars--creator-ecosystem) to follow future updates.
+New Model Engine styles are in preparation.
 
 
 <a id="b-styles"></a>
@@ -599,7 +599,7 @@ Small pixels, big consequences. A white stick-figure cast turns everyday choices
 
 ### B8: Coming soon…
 
-New Code Engine styles and procedural animations are in preparation. [Star the project](#road-to-10000-stars--creator-ecosystem) to follow future updates.
+New Code Engine styles and procedural animations are in preparation.
 
 <!-- thumbnail-publishing-kit:start -->
 <a id="thumbnail-publishing-kit"></a>
