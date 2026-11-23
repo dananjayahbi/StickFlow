@@ -129,7 +129,9 @@ python skills\stickflow\tests\b6_production_test.py
 
 - A · Model Engine needs paid video-model access. It is left in the
   documentation for reference but is not required or tested here.
-- The bundled A/B sample videos are historical references. Creating a new film
+- The bundled A/B sample videos are historical references. Some retain their
+  original on-screen creator watermark; they are not new-project templates, and
+  new B5/B6 work must add no account watermark by default. Creating a new film
   must author new story-specific artwork and motion.
 - `output/` and `demo/` are local working folders.
 - The large `assets/`, `docs/` and `skills/` trees are intentionally listed in
