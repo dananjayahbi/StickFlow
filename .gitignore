@@ -1,0 +1,13 @@
+.worktrees/
+node_modules/
+.env
+.env.*
+!.env.example
+__pycache__/
+*.pyc
+autopilot-work/
+/assets/readme/
+/docs/
+/skills/
+/output/
+/demo/

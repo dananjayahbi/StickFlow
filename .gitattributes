@@ -1,0 +1,15 @@
+# Keep text sources byte-stable on every platform; approved assets are hash-checked.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.mp4 binary
+*.m4a binary
+*.mp3 binary
+*.wav binary
+*.ogg binary
+*.flac binary
+*.ttf binary
+*.zip binary
