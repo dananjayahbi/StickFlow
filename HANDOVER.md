@@ -23,6 +23,8 @@ No video-model account, API key or generation credits are needed for B.
 | End-to-end B1 render | pass — 16.4 s, 1280×720, 30 fps, H.264 + AAC |
 | End-to-end B5 render | pass — 10 s, 1920×1080, 30 fps, silent stage demo |
 | New video from local TTS | pass — 6.45 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
+| Kokoro narration | installed and used — `bm_george`, fully offline |
+| Great Pyramid short | pass — 47.3 s, 1280×720, 30 fps, Kokoro narration, captions, ambience and SFX |
 
 ## Quick start (B only)
 
@@ -44,6 +46,9 @@ Demo outputs:
 - `output\StickFlow-B1-demo.mp4` — bundled 16.4 s example
 - `output\StickFlow-B1-local-tts-demo.mp4` — new 6.45 s video made with the free
   local Windows voice (see below)
+- `output\StickFlow-The-Great-Pyramid.mp4` — new 47.3 s ancient-history short
+  narrated by Kokoro `bm_george`
+- `output\great-pyramid\` — editable project, narration, words and captions
 
 ## Create a new video with the agent
 
@@ -74,10 +79,31 @@ node skills\stickflow\scripts\autopilot.mjs render   <project-dir>
 approval record, run `preview` with the full duration; it produces the complete
 MP4 in `<project-dir>\output\preview.mp4`.
 
-## Free local narration (Windows)
+## Free local narration (Kokoro preferred)
 
-The PC has two installed SAPI voices: `Microsoft David Desktop` and
-`Microsoft Zira Desktop`. Generate narration and word timings with:
+Kokoro is installed in `skills/stickflow/.kokoro-venv` with its model under
+`skills/stickflow/assets/kokoro`. It runs fully offline and is the preferred
+voice. Example:
+
+```powershell
+skills\stickflow\.kokoro-venv\Scripts\python.exe skills\stickflow\scripts\kokoro-tts.py `
+  --text-file C:\work\script.txt `
+  --output C:\work\narration.wav `
+  --words-out C:\work\words.json `
+  --voice bm_george --speed 0.95 --pause 0.25
+
+node skills\stickflow\scripts\autopilot.mjs captions `
+  C:\work\words.json C:\work\captions.json --lead 0.15
+```
+
+Voices: `bm_george` (British male, documentary), `am_michael` (American male),
+`af_sarah` (American female), `bf_emma` (British female). See
+`skills\stickflow\references\kokoro-tts.md`.
+
+### Windows SAPI fallback
+
+The PC also has `Microsoft David Desktop` and `Microsoft Zira Desktop`.
+Generate narration and word timings with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File skills\stickflow\scripts\local-tts.ps1 `
