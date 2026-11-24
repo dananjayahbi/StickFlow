@@ -1,107 +1,142 @@
 # StickFlow Studio
 
-The Studio layer wraps the verified B renderer without changing it. It owns
-configuration, storage, project metadata, and (in later phases) the dashboard
-and MCP server.
+Studio is the local management layer around the verified B renderer. It adds
+configuration, organized storage, Qwen/Kokoro narration, a Next.js dashboard and
+a small MCP server. The renderer and its approval gates are unchanged.
 
-## Phase 1 — foundation
+## Layers
 
-| Piece | Location |
-| --- | --- |
-| Canonical config | `stickflow.config.json` |
-| Studio CLI | `studio/cli.mjs` |
-| Config loader | `studio/lib/config.mjs` |
-| Storage helpers | `studio/lib/storage.mjs` |
-| Metadata/artifacts | `studio/lib/metadata.mjs` |
-| Legacy migration | `studio/lib/migrate.mjs` |
-| Tests | `studio/tests/*.test.mjs` |
+```text
+skills/stickflow/scripts/autopilot.mjs     B renderer (unchanged)
+skills/stickflow/scripts/tts.mjs           unified narration router
+skills/stickflow/scripts/qwen_tts_engine.py Qwen3-TTS on StoryFlow's venv
+studio/lib/                                 config, storage, metadata, voices
+studio/cli.mjs                              command-line Studio
+studio/app/                                 Next.js dashboard
+studio/mcp/server.mjs                       stdio MCP server
+stickflow.config.json                       single source of truth
+```
 
 ## Commands
 
 ```powershell
-# Resolved config, engine health, storage counts
+# Config, engine health, storage counts
 node studio\cli.mjs context
 node studio\cli.mjs context --json
+node studio\cli.mjs doctor
 
 # Create a project inside Storage/Videos or Storage/Shorts
 node studio\cli.mjs new "The Great Pyramid" --style B1 --ratio 16:9
 
-# List / inspect / refresh metadata
+# Narration: Qwen by default, Kokoro available
+node skills\stickflow\scripts\tts.mjs --out-dir <project> --text-file <project>\script.txt --captions
+node skills\stickflow\scripts\tts.mjs --engine kokoro --text "Hello" --output hello.wav --words-out words.json
+
+# Projects
 node studio\cli.mjs list
 node studio\cli.mjs status great-pyramid
 node studio\cli.mjs register great-pyramid --status approved
 
-# Safe dry run, then copy the old output/ tree into Storage/
+# Reference voices
+node studio\cli.mjs voices add --name "Morgan" --audio C:\voices\morgan.wav --text "Exact transcript"
+node studio\cli.mjs voices list
+node studio\cli.mjs voices preset --speaker Aiden
+
+# Migration
 node studio\cli.mjs migrate-legacy
 node studio\cli.mjs migrate-legacy --apply
 
-# Read and write config atomically
-node studio\cli.mjs config get tts.defaultEngine
-node studio\cli.mjs config set tts.defaultEngine kokoro
-
-# Readiness checks
-node studio\cli.mjs doctor
+# Dashboard
+powershell -ExecutionPolicy Bypass -File ..\scripts\start-studio.ps1
+# or: cd studio; npm run dev / npm run build / npm run start
+# http://127.0.0.1:57321
 ```
 
-## Storage layout
+## Storage
 
 ```text
 Storage/
   Videos/<project-id>/      native 16:9
   Shorts/<project-id>/      native 9:16
   _library/
-    voices/<voice-id>/      reference audio + voice.json (phase 2)
-    migrations/             migration manifests with SHA-256 hashes
+    voices/<voice-id>/      reference audio + voice.json
+    migrations/             SHA-256 migration manifests
 ```
 
-Every project keeps the engine contract and all evidence together:
+Each project keeps:
 
 ```text
-<project-id>/
-  project.json             engine manifest (untouched)
-  project-meta.json        dashboard metadata
-  script.txt
-  narration.wav
-  words.json
-  captions.json
-  generation.json          TTS provenance (phase 2)
-  assets/
-  source/
-  output/
-    film.mp4
-    preview.mp4
-    poster.jpg
-    film-contact-sheet.png
+project.json               engine contract (untouched)
+project-meta.json          Studio metadata
+script.txt
+narration.wav
+words.json
+captions.json
+generation.json            engine, voice, speed, timings
+assets/
+source/
+output/
+  film.mp4
+  preview.mp4
+  poster.jpg
+  film-contact-sheet.png
+  film-report.json
 ```
 
-`project-meta.json` is always a sidecar. B1–B3 hash `project.json` as a
-fingerprint, so dashboard fields must never be written into the engine
-manifest.
+`project-meta.json` is a sidecar. B1–B3 hash `project.json` as a fingerprint, so
+dashboard fields never enter the engine manifest.
 
-## Configuration
+## Narration
 
-`stickflow.config.json` is the single source of truth. Relative paths resolve
-from the repository root. The dashboard will write this file atomically.
+`stickflow.config.json` controls the default engine (`qwen`), Qwen mode
+(`custom_voice` or `clone`), speaker, reference audio, and the Kokoro fallback.
 
-Current defaults:
+Qwen uses StoryFlow's existing Python 3.11 venv:
 
-- TTS engine: `qwen`
-- Qwen mode: `custom_voice`, speaker `Aiden`
-- Fallback: Kokoro `bm_george`
-- Qwen interpreter: StoryFlow’s existing Python 3.11 venv
-- Qwen weights: existing Hugging Face cache, offline by default
-- Storage sections: `Videos` / `Shorts`
+`E:\My_GitHub_Repos\storyFlow\backend\qwen_tts\.venv\Scripts\python.exe`
 
-## Legacy migration
+The weights stay in the shared Hugging Face cache and narration runs with
+`HF_HUB_OFFLINE=1`. A GPU lock serializes Qwen with StoryFlow. Timings are
+sentence spans snapped to real silences, then proportional word estimates; they
+are not forced alignment.
 
-`migrate-legacy` is copy-first. It never moves or deletes anything in
-`output/`. The first run creates `Storage/_library/migrations/manifest-*.json`
-with every copied file’s SHA-256. Re-running is idempotent.
+Kokoro remains the fast CPU fallback and can be selected in the dashboard or
+with `config set tts.defaultEngine kokoro`.
 
-## Next phases
+## Dashboard
 
-2. Qwen TTS adapter, VAD sentence timings, unified `tts.mjs`, voice clone library.
-3. Next.js dashboard (overview, projects, project detail, settings).
-4. MCP server (status/list/get/publish/set-default/reindex only).
-5. Gallery and publish planner.
-6. Hardening, docs, end-to-end verification.
+- **Overview** — engine health, default voice, project counts, storage, recent cuts.
+- **Gallery** — visual grid with search and section/status/style filters.
+- **Projects** — management table for every registered project.
+- **Project detail** — player, metadata, artifacts, publish state, scheduling.
+- **Publish planner** — month calendar, scheduled/unscheduled/published lists.
+- **Settings** — default engine, Qwen preset/clone, reference upload, Kokoro voice.
+
+Media is streamed through `/api/media/...` with byte-range support and a
+storage-root path guard. The dashboard is local-only.
+
+## MCP
+
+The server is registered in OpenCode as `stickflow`. Tools:
+
+| Tool | Purpose |
+| --- | --- |
+| `stickflow_status` | engine, storage, counts, recent projects |
+| `stickflow_list_projects` | filtered gallery listing |
+| `stickflow_get_project` | metadata and artifact inventory |
+| `stickflow_publish_project` | register a rendered project in the gallery |
+| `stickflow_planner` | scheduled/unscheduled/published |
+| `stickflow_set_default_tts` | change engine, mode, speaker or Kokoro voice |
+| `stickflow_reindex` | refresh one or all project metadata files |
+
+MCP does not render or author videos. Rendering stays in the project folder with
+`autopilot.mjs`.
+
+## Tests
+
+```powershell
+node --test studio\tests\*.test.mjs
+```
+
+Qwen and Kokoro have also been exercised end-to-end with real audio on this PC.
+

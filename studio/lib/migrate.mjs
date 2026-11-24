@@ -9,7 +9,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import {ROOT} from './config.mjs';
-import {deterministicProjectId, ensureDir, sectionDir, storageRelative} from './storage.mjs';
+import {deterministicProjectId, ensureDir, sectionDir, storageRelative, walkFiles} from './storage.mjs';
 import {registerProject, writeMeta} from './metadata.mjs';
 
 const PAIRS = new Map([
@@ -33,17 +33,6 @@ const SPECIAL = {
     tts: {engine: 'bundled', voice: null, mode: null},
   },
 };
-
-export function walkFiles(root) {
-  const files = [];
-  if (!fs.existsSync(root)) return files;
-  for (const entry of fs.readdirSync(root, {withFileTypes: true})) {
-    const file = path.join(root, entry.name);
-    if (entry.isDirectory()) files.push(...walkFiles(file));
-    else if (entry.isFile()) files.push(file);
-  }
-  return files;
-}
 
 function hashFile(file) {
   return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');

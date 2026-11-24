@@ -17,6 +17,11 @@ Script, voiceover, captions & sound · 15 battle-tested styles · For OpenCode, 
 
 </div>
 
+> **Personal StickFlow Studio.** This installation adds a local Next.js
+> dashboard, Qwen3-TTS (default) with Kokoro fallback, organized
+> `Storage/Videos|Shorts` projects, and a Studio MCP server. Start with
+> [HANDOVER.md](HANDOVER.md) and [studio/README.md](studio/README.md).
+
 <table width="100%">
 <tr>
 <td width="50%" align="center">

@@ -48,6 +48,7 @@ export function probeMedia(file) {
       fps: parseRate(video?.avg_frame_rate || video?.r_frame_rate),
       videoCodec: video?.codec_name ?? null,
       audioCodec: audio?.codec_name ?? null,
+      sampleRate: Number(audio?.sample_rate) || null,
       hasAudio: Boolean(audio),
     };
   } catch {
@@ -154,10 +155,12 @@ function ttsDetails(generationFile, existing) {
 
 function statusFor(artifacts, existing, options) {
   if (options.status) return options.status;
-  if (existing?.status) return existing.status;
-  if (artifacts.film) return 'rendered';
-  if (artifacts.preview) return 'preview';
-  return 'draft';
+  const inferred = artifacts.film ? 'rendered' : artifacts.preview ? 'preview' : 'draft';
+  if (!existing?.status) return inferred;
+  // Reindexing should reflect a newly rendered video without forcing the
+  // operator to change status twice. Never downgrade an explicit status.
+  if (existing.status === 'draft' && inferred !== 'draft') return inferred;
+  return existing.status;
 }
 
 function sectionFromDir(dir, config) {
@@ -272,6 +275,47 @@ export function readProjectSummary(dir, config, section) {
     registered: false,
     assets: relativeAssets(dir, artifacts),
   };
+}
+
+export function updateMeta(dir, patch) {
+  const current = readMeta(dir);
+  if (!current) throw new Error(`No project-meta.json in ${dir}. Run register first.`);
+  if (patch.status && !VALID_STATUSES.includes(patch.status)) throw new Error(`Invalid status "${patch.status}".`);
+  if (patch.visibility && !VALID_VISIBILITY.includes(patch.visibility)) throw new Error(`Invalid visibility "${patch.visibility}".`);
+  const clean = Object.fromEntries(Object.entries(patch).filter(([, value]) => value !== undefined));
+  const publishPatch = Object.fromEntries(Object.entries(patch.publish || {}).filter(([, value]) => value !== undefined));
+  const next = {
+    ...current,
+    ...clean,
+    publish: {
+      ...(current.publish || {}),
+      ...publishPatch,
+    },
+    updatedAt: new Date().toISOString(),
+  };
+  writeMeta(dir, next);
+  return next;
+}
+
+export function publishProject(dir, config, options = {}) {
+  const meta = readMeta(dir) ?? registerProject(dir, config);
+  const videoRelative = meta.assets?.video;
+  if (!videoRelative) throw new Error('Cannot publish: no rendered video found. Render a preview or film first.');
+  const video = path.join(dir, videoRelative);
+  if (!fs.existsSync(video)) throw new Error(`Cannot publish: video file is missing (${videoRelative}).`);
+  return updateMeta(dir, {
+    status: options.status || 'published',
+    visibility: options.visibility || 'gallery',
+    title: options.title,
+    description: options.description,
+    tags: options.tags,
+    publish: {
+      publishedAt: options.publishedAt || new Date().toISOString(),
+      platforms: options.platforms || meta.publish?.platforms || [],
+      scheduledFor: options.scheduledFor !== undefined ? options.scheduledFor : meta.publish?.scheduledFor ?? null,
+      externalUrl: options.externalUrl ?? meta.publish?.externalUrl ?? null,
+    },
+  });
 }
 
 export function artifactFiles(dir) {

@@ -28,12 +28,13 @@
         "language": "English",
         "maxNewTokens": 1024,
         "vramFraction": 0.72,
-        "speed": 1.0,
+        "speed": 1,
         "offline": true,
         "reference": {
           "audio": null,
           "text": "",
-          "xVectorOnly": true
+          "xVectorOnly": true,
+          "voiceId": null
         }
       },
       "kokoro": {
@@ -49,7 +50,7 @@
   },
   "dashboard": {
     "host": "127.0.0.1",
-    "port": 4310
+    "port": 57321
   },
   "publishing": {
     "timezone": "Asia/Colombo",
@@ -61,3 +62,4 @@
     ]
   }
 }
+

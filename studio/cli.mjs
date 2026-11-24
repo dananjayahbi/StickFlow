@@ -21,12 +21,13 @@ import {
   engineHealth, getPath, loadConfig, loadRawConfig, parseConfigValue, setPath, updateRawConfig,
 } from './lib/config.mjs';
 import {
-  ensureDir, ensureLibrary, findProject, humanizeId, loadVoiceReferences, newProjectId,
+  ensureDir, ensureLibrary, findProject, humanizeId, newProjectId,
   readJson, sectionDir, sectionForRatio, storageRelative, listProjectDirs, slugify,
   VALID_STATUSES, VALID_VISIBILITY,
 } from './lib/storage.mjs';
 import {artifactFiles, readProjectSummary, registerProject} from './lib/metadata.mjs';
 import {planMigration} from './lib/migrate.mjs';
+import {addVoice, describeVoice, listVoices, usePreset, useVoice} from './lib/voices.mjs';
 
 const [command, ...args] = process.argv.slice(2);
 const has = flag => args.includes(flag);
@@ -92,7 +93,7 @@ function context(config) {
     },
     engines: health,
     counts,
-    voices: loadVoiceReferences(config).map(voice => ({id: voice.id, name: voice.name, engine: voice.engine, audio: voice.audio})),
+    voices: listVoices(config).map(describeVoice),
   };
 }
 
@@ -301,6 +302,60 @@ function commandConfig() {
   throw new Error('Usage: node studio/cli.mjs config get [path] | config set <path> <value>');
 }
 
+function commandVoices() {
+  const action = positional()[0] ?? 'list';
+  const config = loadConfig();
+  if (action === 'list') {
+    const voices = listVoices(config).map(describeVoice);
+    if (jsonOut()) { console.log(JSON.stringify(voices, null, 2)); return; }
+    if (!voices.length) { line('No reference voices yet. Run: node studio/cli.mjs voices add --name "Morgan" --audio <file>'); return; }
+    table(voices.map(voice => ({
+      id: voice.id,
+      name: voice.name,
+      duration: voice.duration ? `${voice.duration.toFixed(1)}s` : '—',
+      text: voice.text || '—',
+      audio: path.basename(voice.audio),
+    })), [
+      {key: 'id', label: 'ID'}, {key: 'name', label: 'NAME'}, {key: 'duration', label: 'DURATION'},
+      {key: 'text', label: 'TRANSCRIPT'}, {key: 'audio', label: 'AUDIO'},
+    ]);
+    return;
+  }
+  if (action === 'add') {
+    const name = option('--name');
+    const audio = option('--audio');
+    const text = option('--text', '');
+    if (!name || !audio) throw new Error('Usage: node studio/cli.mjs voices add --name "Morgan" --audio <file> [--text "transcript"] [--x-vector-only] [--no-default]');
+    const result = addVoice(config, {
+      name,
+      audio: path.resolve(audio),
+      text,
+      xVectorOnly: has('--x-vector-only') || !String(text).trim(),
+      setDefault: !has('--no-default'),
+    });
+    if (jsonOut()) { console.log(JSON.stringify(result, null, 2)); return; }
+    line(`Added voice ${result.voice.id} (${result.voice.name})`);
+    if (!has('--no-default')) line('Qwen is now set to clone this reference. Update it in the dashboard later.');
+    return;
+  }
+  if (action === 'use') {
+    const identifier = positional()[1];
+    if (!identifier) throw new Error('Usage: node studio/cli.mjs voices use <id|name>');
+    const result = useVoice(config, identifier, {xVectorOnly: has('--transcript') ? false : undefined});
+    if (jsonOut()) { console.log(JSON.stringify(result, null, 2)); return; }
+    line(`Qwen now clones ${result.voice.name} (${result.voice.id}).`);
+    return;
+  }
+  if (action === 'preset') {
+    const speaker = option('--speaker', 'Aiden');
+    const result = usePreset(config, speaker);
+    if (jsonOut()) { console.log(JSON.stringify(result, null, 2)); return; }
+    line(`Qwen now uses preset speaker ${speaker}.`);
+    return;
+  }
+  throw new Error('Usage: node studio/cli.mjs voices list | add --name N --audio F [--text T] | use <id> | preset --speaker Aiden');
+}
+
 function commandDoctor() {
   const config = loadConfig();
   const health = engineHealth(config);
@@ -325,6 +380,7 @@ async function main() {
   else if (command === 'register') commandRegister();
   else if (command === 'migrate-legacy') commandMigrate();
   else if (command === 'config') commandConfig();
+  else if (command === 'voices') commandVoices();
   else if (command === 'doctor') commandDoctor();
   else {
     line('StickFlow Studio CLI');
@@ -336,6 +392,7 @@ async function main() {
     line('  node studio/cli.mjs register <id|path> [--title T] [--status S] [--visibility V]');
     line('  node studio/cli.mjs migrate-legacy [--apply] [--json]');
     line('  node studio/cli.mjs config get [path] | config set <path> <value>');
+    line('  node studio/cli.mjs voices list | add --name N --audio F [--text T] | use <id> | preset --speaker Aiden');
     line('  node studio/cli.mjs doctor');
   }
 }

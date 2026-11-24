@@ -180,6 +180,23 @@ export function projectPaths(dir) {
   };
 }
 
+export function walkFiles(root) {
+  const files = [];
+  if (!fs.existsSync(root)) return files;
+  for (const entry of fs.readdirSync(root, {withFileTypes: true})) {
+    const file = path.join(root, entry.name);
+    if (entry.isDirectory()) files.push(...walkFiles(file));
+    else if (entry.isFile()) files.push(file);
+  }
+  return files;
+}
+
+export function directorySize(root) {
+  return walkFiles(root).reduce((total, file) => {
+    try { return total + fs.statSync(file).size; } catch { return total; }
+  }, 0);
+}
+
 export function fileInfo(file) {
   try {
     const stat = fs.statSync(file);

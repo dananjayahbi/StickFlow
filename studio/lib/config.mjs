@@ -44,7 +44,7 @@ export const DEFAULTS = Object.freeze({
         vramFraction: 0.72,
         speed: 1.0,
         offline: true,
-        reference: {audio: null, text: '', xVectorOnly: true},
+        reference: {audio: null, text: '', xVectorOnly: true, voiceId: null},
       },
       kokoro: {
         enabled: true,
@@ -57,7 +57,7 @@ export const DEFAULTS = Object.freeze({
       },
     },
   },
-  dashboard: {host: '127.0.0.1', port: 4310},
+  dashboard: {host: '127.0.0.1', port: 57321},
   publishing: {timezone: 'Asia/Colombo', platforms: ['youtube', 'tiktok', 'instagram', 'facebook']},
 });
 
@@ -349,3 +349,4 @@ export function engineHealth(config) {
     },
   };
 }
+

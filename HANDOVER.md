@@ -25,12 +25,19 @@ No video-model account, API key or generation credits are needed for B.
 | New video from local TTS | pass — 6.45 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
 | Kokoro narration | installed and used — `bm_george`, fully offline |
 | Great Pyramid short | pass — 47.3 s, 1280×720, 30 fps, Kokoro narration, captions, ambience and SFX |
-| Studio Phase 1 | pass — config, storage, metadata, CLI, copy-first migration, 18 tests |
+| Studio Phase 1 | pass — config, storage, metadata, CLI, copy-first migration |
+| Studio Phase 2 | pass — Qwen custom voice and clone, VAD timings, unified TTS router |
+| Studio Phase 3 | pass — Next.js dashboard, gallery, planner, settings, media range |
+| Studio Phase 4 | pass — stdio MCP server registered in OpenCode |
+| Studio tests | 22 pass |
 | Storage layout | `Storage\Videos\<project-id>\`; old `output\` untouched |
 | Default TTS | `qwen`; Kokoro remains the fallback |
 | Qwen readiness | venv, CUDA and both model caches verified; no weights downloaded |
+| Qwen real render | pass — 4.8 s B1 short, Qwen narration, captions, ambience, preview |
+| Dashboard | `http://127.0.0.1:57321` after `npm --prefix studio run start` |
+| MCP | `stickflow_status`, list/get, publish, planner, set-default TTS, reindex |
 
-## Studio foundation (Phase 1)
+## Studio
 
 `stickflow.config.json` is the single source of truth for the default TTS
 engine, storage roots, dashboard settings and publishing preferences. Relative
@@ -38,6 +45,7 @@ paths resolve from the repository root.
 
 ```powershell
 node studio\cli.mjs context --json   # resolved config, engine health, counts
+node studio\cli.mjs new "Title" --style B1 --ratio 16:9
 node studio\cli.mjs list             # projects in Storage/
 node studio\cli.mjs status great-pyramid
 node studio\cli.mjs doctor
@@ -46,14 +54,35 @@ node studio\cli.mjs migrate-legacy --apply
 node --test studio\tests\*.test.mjs
 ```
 
-Storage now follows the StoryFlow pattern:
+### Narration
+
+Qwen3-TTS is the default. It reuses StoryFlow's Python 3.11 venv and the shared
+Hugging Face cache; no model weights are downloaded by StickFlow.
+
+```powershell
+node skills\stickflow\scripts\tts.mjs `
+  --text-file <project>\script.txt `
+  --out-dir <project> --captions
+```
+
+- `--engine auto` uses the config default.
+- `--engine kokoro` forces the fast CPU voice.
+- `--engine qwen --mode clone --reference <wav>` clones a reference.
+- `fallbackToKokoro: true` keeps production safe if Qwen or CUDA fails.
+- Timings are silence-snapped sentence spans plus proportional words, not
+  forced alignment.
+
+`generation.json` records engine, mode, voice, speed, duration and timing counts.
+Each project's `project-meta.json` records the same provenance for the dashboard.
+
+### Storage
 
 ```text
 Storage/
   Videos/<project-id>/     native 16:9
   Shorts/<project-id>/     native 9:16
   _library/
-    voices/                reference voices (phase 2)
+    voices/<voice-id>/     reference audio + voice.json
     migrations/            manifests with SHA-256 hashes
 ```
 
@@ -63,8 +92,43 @@ the engine manifest, so B1–B3 fingerprints and approvals stay valid.
 
 The Great Pyramid was migrated to `Storage\Videos\great-pyramid-dcb17d` with
 `output\film.mp4`, a poster, captions and a generated script. The original
-`output\` tree was not modified. Qwen is configured as the default engine but
-the TTS adapter is Phase 2; Kokoro remains fully operational.
+`output\` tree was not modified.
+
+### Dashboard
+
+```powershell
+# One command from the repository root
+powershell -ExecutionPolicy Bypass -File scripts\start-studio.ps1
+
+# Or manually
+cd studio
+npm run dev        # development
+npm run build
+npm run start      # http://127.0.0.1:57321
+```
+
+Pages: Overview, Gallery, Projects, Project detail, Publish planner, Settings.
+Settings writes the default engine, Qwen preset/clone mode and Kokoro voice.
+Reference-voice upload writes to `Storage\_library\voices` and switches Qwen to
+clone mode.
+
+Media is served through `/api/media/...` with byte-range support and a
+storage-root path guard.
+
+### MCP
+
+The `stickflow` MCP server is registered in OpenCode. It exposes Studio
+operations only: status, list/get projects, publish, planner, set-default TTS
+and reindex. Rendering and authoring stay in the normal project-directory
+workflow with `autopilot.mjs`.
+
+### End-to-end verification
+
+A new `Storage\Videos\studio-voice-test-b2069a` project was created, narrated
+with Qwen `Aiden`, captioned, rendered to a 4.8 s B1 preview, registered and
+published to the gallery through MCP. The evidence copy is in the session temp
+folder; the test project was removed from Storage after verification so the
+user's gallery stays clean.
 
 ## Quick start (B only)
 
@@ -119,11 +183,27 @@ node skills\stickflow\scripts\autopilot.mjs render   <project-dir>
 approval record, run `preview` with the full duration; it produces the complete
 MP4 in `<project-dir>\output\preview.mp4`.
 
-## Free local narration (Kokoro preferred)
+## Narration (Qwen default, Kokoro fallback)
 
-Kokoro is installed in `skills/stickflow/.kokoro-venv` with its model under
-`skills/stickflow/assets/kokoro`. It runs fully offline and is the preferred
-voice. Example:
+Qwen3-TTS is the default. It reuses StoryFlow's Python 3.11 venv and the shared
+Hugging Face cache. The unified router reads `stickflow.config.json`:
+
+```powershell
+node skills\stickflow\scripts\tts.mjs `
+  --text-file <project>\script.txt `
+  --out-dir <project> --captions
+```
+
+- `--engine auto` uses the configured default.
+- `--engine kokoro` forces Kokoro.
+- `--engine qwen --mode clone --reference <wav>` clones a reference.
+- `--no-fallback` fails instead of switching engines.
+
+See `skills\stickflow\references\qwen-tts.md`.
+
+Kokoro is installed in `skills\stickflow\.kokoro-venv` with its model under
+`skills/stickflow/assets/kokoro`. It runs fully offline and remains the fast CPU
+fallback. Direct use:
 
 ```powershell
 skills\stickflow\.kokoro-venv\Scripts\python.exe skills\stickflow\scripts\kokoro-tts.py `
@@ -206,3 +286,4 @@ python skills\stickflow\tests\b6_production_test.py
   hand over this folder (or an archive of it), not the Git tree alone.
 - Local commits exist on `main`. The configured remote is your personal
   `dananjayahbi/StickFlow` repository; nothing was pushed during this handover.
+
