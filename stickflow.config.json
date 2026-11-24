@@ -1,0 +1,63 @@
+{
+  "version": 1,
+  "storage": {
+    "root": "Storage",
+    "sections": {
+      "video": "Videos",
+      "short": "Shorts"
+    },
+    "library": "_library"
+  },
+  "projectDefaults": {
+    "style": "B1",
+    "ratio": "16:9",
+    "fps": 30,
+    "captionLead": 0.15
+  },
+  "tts": {
+    "defaultEngine": "qwen",
+    "fallbackToKokoro": true,
+    "engines": {
+      "qwen": {
+        "enabled": true,
+        "python": "E:/My_GitHub_Repos/storyFlow/backend/qwen_tts/.venv/Scripts/python.exe",
+        "model": "Qwen/Qwen3-TTS-12Hz-0.6B-CustomVoice",
+        "baseModel": "Qwen/Qwen3-TTS-12Hz-0.6B-Base",
+        "mode": "custom_voice",
+        "speaker": "Aiden",
+        "language": "English",
+        "maxNewTokens": 1024,
+        "vramFraction": 0.72,
+        "speed": 1.0,
+        "offline": true,
+        "reference": {
+          "audio": null,
+          "text": "",
+          "xVectorOnly": true
+        }
+      },
+      "kokoro": {
+        "enabled": true,
+        "python": "skills/stickflow/.kokoro-venv/Scripts/python.exe",
+        "model": "skills/stickflow/assets/kokoro/kokoro-v1.0.onnx",
+        "voices": "skills/stickflow/assets/kokoro/voices-v1.0.bin",
+        "voice": "bm_george",
+        "speed": 0.95,
+        "pause": 0.25
+      }
+    }
+  },
+  "dashboard": {
+    "host": "127.0.0.1",
+    "port": 4310
+  },
+  "publishing": {
+    "timezone": "Asia/Colombo",
+    "platforms": [
+      "youtube",
+      "tiktok",
+      "instagram",
+      "facebook"
+    ]
+  }
+}

@@ -11,3 +11,8 @@ autopilot-work/
 /skills/
 /output/
 /demo/
+/Storage/
+/studio/.next/
+/studio/node_modules/
+/studio/dashboard-build/
+/stickflow.config.json.lock

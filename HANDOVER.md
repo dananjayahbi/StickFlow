@@ -25,6 +25,46 @@ No video-model account, API key or generation credits are needed for B.
 | New video from local TTS | pass — 6.45 s, 1280×720, 30 fps, narration + captions + SFX + ambience, zero paid credits |
 | Kokoro narration | installed and used — `bm_george`, fully offline |
 | Great Pyramid short | pass — 47.3 s, 1280×720, 30 fps, Kokoro narration, captions, ambience and SFX |
+| Studio Phase 1 | pass — config, storage, metadata, CLI, copy-first migration, 18 tests |
+| Storage layout | `Storage\Videos\<project-id>\`; old `output\` untouched |
+| Default TTS | `qwen`; Kokoro remains the fallback |
+| Qwen readiness | venv, CUDA and both model caches verified; no weights downloaded |
+
+## Studio foundation (Phase 1)
+
+`stickflow.config.json` is the single source of truth for the default TTS
+engine, storage roots, dashboard settings and publishing preferences. Relative
+paths resolve from the repository root.
+
+```powershell
+node studio\cli.mjs context --json   # resolved config, engine health, counts
+node studio\cli.mjs list             # projects in Storage/
+node studio\cli.mjs status great-pyramid
+node studio\cli.mjs doctor
+node studio\cli.mjs migrate-legacy   # dry run
+node studio\cli.mjs migrate-legacy --apply
+node --test studio\tests\*.test.mjs
+```
+
+Storage now follows the StoryFlow pattern:
+
+```text
+Storage/
+  Videos/<project-id>/     native 16:9
+  Shorts/<project-id>/     native 9:16
+  _library/
+    voices/                reference voices (phase 2)
+    migrations/            manifests with SHA-256 hashes
+```
+
+Each project keeps `project.json`, `project-meta.json`, narration, captions,
+source and `output/` together. `project-meta.json` is a sidecar and never enters
+the engine manifest, so B1–B3 fingerprints and approvals stay valid.
+
+The Great Pyramid was migrated to `Storage\Videos\great-pyramid-dcb17d` with
+`output\film.mp4`, a poster, captions and a generated script. The original
+`output\` tree was not modified. Qwen is configured as the default engine but
+the TTS adapter is Phase 2; Kokoro remains fully operational.
 
 ## Quick start (B only)
 

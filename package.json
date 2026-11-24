@@ -1,0 +1,15 @@
+{
+  "name": "stickflow",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "StickFlow local stickman video studio",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "studio": "node studio/cli.mjs",
+    "test:studio": "node --test studio/tests/*.test.mjs",
+    "verify": "powershell -ExecutionPolicy Bypass -File scripts/verify-stickflow.ps1"
+  }
+}
